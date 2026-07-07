@@ -3,10 +3,17 @@ from typing import Optional
 import json
 
 class Settings(BaseSettings):
-    # Supabase
-    SUPABASE_URL: str
-    SUPABASE_KEY: Optional[str] = None  # Falls back to SUPABASE_SERVICE_ROLE_KEY
-    SUPABASE_SERVICE_ROLE_KEY: str
+    # Supabase (use NEXT_PUBLIC_SUPABASE_URL if SUPABASE_URL not set)
+    SUPABASE_URL: Optional[str] = None
+    NEXT_PUBLIC_SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
+
+    def get_supabase_url(self) -> str:
+        return self.SUPABASE_URL or self.NEXT_PUBLIC_SUPABASE_URL or ""
+
+    def get_service_role_key(self) -> str:
+        return self.SUPABASE_SERVICE_ROLE_KEY or self.SUPABASE_KEY or ""
 
     # Google Service Account (for direct Sheets access)
     GOOGLE_SERVICE_ACCOUNT_JSON: Optional[str] = None
