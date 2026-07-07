@@ -46,7 +46,7 @@ class GoogleSheetsService:
             raise
 
     async def get_contacts(self):
-        """Get contacts from Google Sheets (Name, Phone columns)"""
+        """Get contacts from Google Sheets (Vārds, Telefona nr columns for Latvian sheets)"""
         try:
             credentials = await self.get_credentials()
             sheets = discovery.build("sheets", "v4", credentials=credentials)
@@ -62,21 +62,41 @@ class GoogleSheetsService:
 
             sheet_id = metadata.data[0]["metadata"].get("sheet_id")
 
-            # Read Name and Phone columns
+            # Read all columns to find Name and Phone
             result = sheets.spreadsheets().values().get(
                 spreadsheetId=sheet_id,
-                range="Sheet1!A:B",
+                range="Sheet1!A:Z",
             ).execute()
 
             values = result.get("values", [])
-            contacts = []
+            if not values:
+                return []
 
+            # Find column indices for Name (Vārds) and Phone (Telefona nr)
+            headers = values[0]
+            name_col = None
+            phone_col = None
+
+            for idx, header in enumerate(headers):
+                if "vārds" in header.lower() or "name" in header.lower():
+                    name_col = idx
+                if "telefona" in header.lower() or "phone" in header.lower():
+                    phone_col = idx
+
+            if name_col is None or phone_col is None:
+                logger.error(f"Could not find Name or Phone columns. Headers: {headers}")
+                return []
+
+            contacts = []
             for row in values[1:]:  # Skip header
-                if len(row) >= 2:
-                    contacts.append({
-                        "name": row[0],
-                        "phone": row[1],
-                    })
+                if len(row) > max(name_col, phone_col):
+                    name = row[name_col].strip() if name_col < len(row) else ""
+                    phone = row[phone_col].strip() if phone_col < len(row) else ""
+                    if name and phone:
+                        contacts.append({
+                            "name": name,
+                            "phone": phone,
+                        })
 
             logger.info(f"Retrieved {len(contacts)} contacts from Google Sheets")
             return contacts
