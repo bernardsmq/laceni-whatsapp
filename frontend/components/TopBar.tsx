@@ -1,9 +1,10 @@
 interface TopBarProps {
   metaConnected: boolean
   sheetConnected: boolean
+  onSettingsClick?: () => void
 }
 
-export default function TopBar({ metaConnected, sheetConnected }: TopBarProps) {
+export default function TopBar({ metaConnected, sheetConnected, onSettingsClick }: TopBarProps) {
   return (
     <div className="topbar">
       <div className="brand">
@@ -19,6 +20,13 @@ export default function TopBar({ metaConnected, sheetConnected }: TopBarProps) {
           <span className={`dot ${sheetConnected ? 'live' : ''}`}></span>
           Google Sheet — {sheetConnected ? 'connected' : 'not connected'}
         </div>
+        <button
+          className="btn btn-ghost"
+          onClick={onSettingsClick}
+          style={{ marginLeft: '12px', padding: '6px 12px', fontSize: '12px' }}
+        >
+          ⚙️ Settings
+        </button>
       </div>
     </div>
   )

@@ -4,11 +4,13 @@ import TemplatesCard from './TemplatesCard'
 import ContactsCard from './ContactsCard'
 import CampaignCard from './CampaignCard'
 import TrackingCard from './TrackingCard'
+import SettingsModal from './SettingsModal'
 
 export default function Dashboard() {
   const [metaConnected, setMetaConnected] = useState(false)
   const [sheetConnected, setSheetConnected] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     checkConnectionStatus()
@@ -16,14 +18,7 @@ export default function Dashboard() {
 
   const checkConnectionStatus = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/status`,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-        }
-      )
+      const response = await fetch('/api/status')
       if (response.ok) {
         const data = await response.json()
         setMetaConnected(data.meta_connected)
@@ -41,17 +36,19 @@ export default function Dashboard() {
       <TopBar
         metaConnected={metaConnected}
         sheetConnected={sheetConnected}
+        onSettingsClick={() => setSettingsOpen(true)}
+      />
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => {
+          setSettingsOpen(false)
+          checkConnectionStatus()
+        }}
       />
       <div className="shell">
         <div>
-          <TemplatesCard
-            connected={metaConnected}
-            onConnect={() => window.location.href = '/api/auth/meta-whatsapp'}
-          />
-          <ContactsCard
-            connected={sheetConnected}
-            onConnect={() => window.location.href = '/api/auth/google-sheets'}
-          />
+          <TemplatesCard connected={metaConnected} />
+          <ContactsCard connected={sheetConnected} />
         </div>
         <div>
           <CampaignCard

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.config import settings
-from app.api import auth, templates, contacts, campaigns, logs
+from app.api import auth, templates, contacts, campaigns, logs, settings as settings_api
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ app.include_router(templates.router, prefix="/api", tags=["templates"])
 app.include_router(contacts.router, prefix="/api", tags=["contacts"])
 app.include_router(campaigns.router, prefix="/api", tags=["campaigns"])
 app.include_router(logs.router, prefix="/api", tags=["logs"])
+app.include_router(settings_api.router, prefix="/api", tags=["settings"])
 
 @app.get("/health")
 async def health_check():
@@ -45,9 +46,21 @@ async def health_check():
 @app.get("/api/status")
 async def connection_status():
     """Check connection status for Meta and Google Sheets"""
+    from app.services.supabase_client import supabase
+
     sheet_connected = bool(settings.GOOGLE_SHEETS_ID)
+
+    # Check if Meta is configured
+    try:
+        meta_creds = supabase.table("oauth_credentials").select("*").eq(
+            "provider", "meta_whatsapp"
+        ).execute()
+        meta_connected = bool(meta_creds.data and meta_creds.data[0].get("access_token"))
+    except:
+        meta_connected = False
+
     return {
-        "meta_connected": False,  # TODO: Check from Supabase
+        "meta_connected": meta_connected,
         "sheet_connected": sheet_connected,
     }
 
