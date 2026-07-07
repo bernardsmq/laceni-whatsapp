@@ -23,28 +23,10 @@ async def list_contacts():
 async def sync_contacts():
     """Manually trigger sync from Google Sheets"""
     try:
-        # Get Google Sheets credentials
-        credentials = supabase.table("oauth_credentials").select("*").eq(
-            "provider", "google_sheets"
-        ).execute()
-
-        if not credentials.data:
-            raise HTTPException(status_code=400, detail="Google Sheets not connected")
-
         sheets_service = GoogleSheetsService()
-        contacts = await sheets_service.get_contacts()
+        contacts = await sheets_service.sync_from_sheets()
 
-        # Clear and re-insert contacts
-        supabase.table("contacts").delete().neq("id", "").execute()
-
-        for contact in contacts:
-            supabase.table("contacts").insert({
-                "name": contact["name"],
-                "phone": contact["phone"],
-            }).execute()
-
-        logger.info(f"Synced {len(contacts)} contacts from Google Sheets")
-        return {"synced": len(contacts), "contacts": contacts}
+        return {"success": True, "synced": len(contacts), "contacts": contacts}
 
     except Exception as e:
         logger.error(f"Error syncing contacts: {str(e)}")
