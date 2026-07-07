@@ -1,6 +1,8 @@
 import logging
 import httpx
 import json
+import time
+from google.auth import _helpers
 from google.oauth2 import service_account
 from app.config import settings, get_service_account_credentials
 from app.services.supabase_client import supabase
@@ -11,72 +13,106 @@ class GoogleSheetsService:
     def __init__(self):
         self.sheet_id = settings.GOOGLE_SHEETS_ID
 
-    async def sync_from_sheets(self):
-        """Sync contacts from Google Sheets to Supabase"""
+    async def _get_access_token(self):
+        """Get access token from service account"""
         try:
-            if not self.sheet_id:
-                logger.warning("No sheet ID configured")
-                return []
-
-            # Get service account credentials
             creds_dict = get_service_account_credentials()
             if not creds_dict:
-                logger.error("No service account credentials")
-                return []
+                raise Exception("No credentials")
 
-            # Get access token
             credentials = service_account.Credentials.from_service_account_info(
                 creds_dict,
                 scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
             )
 
-            # Refresh to get access token
-            request = httpx.Request("GET", "https://www.google.com")
-            credentials.refresh(request)
-            access_token = credentials.token
+            # Get access token by making a request
+            async with httpx.AsyncClient() as client:
+                token_response = await client.post(
+                    "https://oauth2.googleapis.com/token",
+                    data={
+                        "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                        "assertion": credentials._make_authorization_grant_assertion(),
+                    },
+                )
+
+                if token_response.status_code != 200:
+                    raise Exception(f"Token request failed: {token_response.text}")
+
+                token_data = token_response.json()
+                return token_data["access_token"]
+
+        except Exception as e:
+            logger.error(f"Failed to get access token: {str(e)}")
+            raise
+
+    async def sync_from_sheets(self):
+        """Sync contacts from Google Sheets to Supabase"""
+        try:
+            if not self.sheet_id:
+                logger.error("No sheet ID configured")
+                return []
+
+            logger.info(f"Starting sync from sheet {self.sheet_id}")
+
+            # Get access token
+            access_token = await self._get_access_token()
+            logger.info("Got access token")
 
             # Call Google Sheets API
             async with httpx.AsyncClient() as client:
                 url = f"https://sheets.googleapis.com/v4/spreadsheets/{self.sheet_id}/values/Sheet1!A:Z"
-                response = await client.get(
-                    url,
-                    params={"access_token": access_token}
-                )
+                headers = {"Authorization": f"Bearer {access_token}"}
+
+                response = await client.get(url, headers=headers)
 
                 if response.status_code != 200:
-                    logger.error(f"Google Sheets API error: {response.text}")
+                    logger.error(f"Google Sheets API error {response.status_code}: {response.text}")
                     return []
 
                 data = response.json()
                 values = data.get("values", [])
 
+                logger.info(f"Got {len(values)} rows from sheet")
+
                 if not values or len(values) < 2:
-                    logger.warning("No data in sheet")
+                    logger.warning("No data in sheet or only headers")
                     return []
 
                 # Find columns
                 headers = values[0]
+                logger.info(f"Headers: {headers}")
+
                 name_col = None
                 phone_col = None
 
                 for idx, header in enumerate(headers):
-                    if "vārds" in header.lower() or "name" in header.lower():
+                    h_lower = header.lower() if header else ""
+                    if "vārds" in h_lower or "name" in h_lower:
                         name_col = idx
-                    if "telefona" in header.lower() or "phone" in header.lower():
+                        logger.info(f"Found name column at index {idx}: {header}")
+                    if "telefona" in h_lower or "phone" in h_lower:
                         phone_col = idx
+                        logger.info(f"Found phone column at index {idx}: {header}")
 
                 if name_col is None or phone_col is None:
-                    logger.error(f"Missing Name or Phone columns. Headers: {headers}")
+                    logger.error(f"Missing columns. Name col: {name_col}, Phone col: {phone_col}")
                     return []
 
                 # Extract contacts
                 contacts = []
-                for row in values[1:]:
-                    if len(row) > max(name_col, phone_col):
-                        name = row[name_col].strip() if name_col < len(row) else ""
-                        phone = row[phone_col].strip() if phone_col < len(row) else ""
+                for i, row in enumerate(values[1:], start=2):
+                    try:
+                        name = row[name_col].strip() if name_col < len(row) and row[name_col] else ""
+                        phone = row[phone_col].strip() if phone_col < len(row) and row[phone_col] else ""
+
                         if name and phone:
                             contacts.append({"name": name, "phone": phone})
+                            logger.info(f"Row {i}: {name}, {phone}")
+                    except Exception as e:
+                        logger.warning(f"Row {i} error: {str(e)}")
+                        continue
+
+                logger.info(f"Extracted {len(contacts)} contacts")
 
                 # Clear and sync to Supabase
                 supabase.table("contacts").delete().neq("id", "").execute()
@@ -86,11 +122,11 @@ class GoogleSheetsService:
                         "phone": contact["phone"],
                     }).execute()
 
-                logger.info(f"Synced {len(contacts)} contacts from Google Sheets")
+                logger.info(f"Synced {len(contacts)} contacts to Supabase")
                 return contacts
 
         except Exception as e:
-            logger.error(f"Error syncing from sheets: {str(e)}")
+            logger.error(f"Error syncing from sheets: {str(e)}", exc_info=True)
             return []
 
     async def get_contacts(self):
