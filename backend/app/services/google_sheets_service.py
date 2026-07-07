@@ -107,8 +107,16 @@ class GoogleSheetsService:
 
                 logger.info(f"Extracted {len(contacts)} contacts")
 
-                # Clear and sync to Supabase
-                supabase.table("contacts").delete().neq("id", "").execute()
+                # Clear old contacts and insert new ones
+                try:
+                    # Delete all contacts - get all first then delete by id
+                    existing = supabase.table("contacts").select("id").execute()
+                    for row in existing.data or []:
+                        supabase.table("contacts").delete().eq("id", row["id"]).execute()
+                except Exception as e:
+                    logger.warning(f"Could not delete old contacts: {str(e)}")
+
+                # Insert new contacts
                 for contact in contacts:
                     supabase.table("contacts").insert({
                         "name": contact["name"],
