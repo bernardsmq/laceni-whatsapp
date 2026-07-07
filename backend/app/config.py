@@ -5,7 +5,7 @@ import json
 class Settings(BaseSettings):
     # Supabase
     SUPABASE_URL: str
-    SUPABASE_KEY: str
+    SUPABASE_KEY: Optional[str] = None  # Falls back to SUPABASE_SERVICE_ROLE_KEY
     SUPABASE_SERVICE_ROLE_KEY: str
 
     # Google Service Account (for direct Sheets access)

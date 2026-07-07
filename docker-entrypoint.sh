@@ -20,7 +20,7 @@ sleep 3
 
 # Start nginx reverse proxy
 echo "Starting nginx reverse proxy on port 8080..."
-nginx -g 'daemon off;' &
+nginx -g 'daemon off; user root;' &
 NGINX_PID=$!
 
 echo "Services started:"
