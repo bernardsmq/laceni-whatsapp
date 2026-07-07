@@ -38,14 +38,9 @@ RUN cd frontend && npm ci --only=production
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Install nginx for reverse proxy
-RUN apt-get update && apt-get install -y nginx && rm -rf /var/lib/apt/lists/*
-
-# Copy nginx config
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Expose only port 8080 (nginx reverse proxy)
-EXPOSE 8080
+# Expose ports
+# Frontend: 3000, Backend: 8000
+EXPOSE 3000 8000
 
 # Start script
 COPY docker-entrypoint.sh .
