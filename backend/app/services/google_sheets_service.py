@@ -16,6 +16,8 @@ class GoogleSheetsService:
     async def _get_access_token(self):
         """Get access token from service account"""
         try:
+            from google.auth.transport.requests import Request
+
             creds_dict = get_service_account_credentials()
             if not creds_dict:
                 raise Exception("No credentials")
@@ -25,21 +27,12 @@ class GoogleSheetsService:
                 scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
             )
 
-            # Get access token by making a request
-            async with httpx.AsyncClient() as client:
-                token_response = await client.post(
-                    "https://oauth2.googleapis.com/token",
-                    data={
-                        "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
-                        "assertion": credentials._make_authorization_grant_assertion(),
-                    },
-                )
+            # Refresh credentials to get access token
+            request = Request()
+            credentials.refresh(request)
 
-                if token_response.status_code != 200:
-                    raise Exception(f"Token request failed: {token_response.text}")
-
-                token_data = token_response.json()
-                return token_data["access_token"]
+            logger.info(f"Got access token: {credentials.token[:20]}...")
+            return credentials.token
 
         except Exception as e:
             logger.error(f"Failed to get access token: {str(e)}")
