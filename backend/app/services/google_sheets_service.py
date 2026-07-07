@@ -1,9 +1,7 @@
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from google.auth.refresh_handler import RefreshError
+from google.oauth2 import service_account
 from google.api_python_client import discovery
 import logging
-
+from app.config import settings, get_service_account_credentials
 from app.services.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -11,34 +9,19 @@ logger = logging.getLogger(__name__)
 class GoogleSheetsService:
     def __init__(self):
         self.sheets_service = None
+        self.sheet_id = settings.GOOGLE_SHEETS_ID
 
     async def get_credentials(self):
-        """Get fresh Google credentials from Supabase"""
+        """Get service account credentials for Google Sheets"""
         try:
-            credentials_data = supabase.table("oauth_credentials").select("*").eq(
-                "provider", "google_sheets"
-            ).execute()
+            creds_dict = get_service_account_credentials()
+            if not creds_dict:
+                raise Exception("Google service account credentials not configured")
 
-            if not credentials_data.data:
-                raise Exception("Google Sheets not connected")
-
-            cred = credentials_data.data[0]
-            credentials = Credentials(
-                token=cred["access_token"],
-                refresh_token=cred["refresh_token"],
-                token_uri="https://oauth2.googleapis.com/token",
-                client_id="",  # Not needed for refresh
-                client_secret="",
+            credentials = service_account.Credentials.from_service_account_info(
+                creds_dict,
+                scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
             )
-
-            # Refresh if needed
-            if credentials.expired:
-                credentials.refresh(Request())
-                # Update token in Supabase
-                supabase.table("oauth_credentials").update({
-                    "access_token": credentials.token,
-                }).eq("provider", "google_sheets").execute()
-
             return credentials
 
         except Exception as e:
@@ -48,28 +31,22 @@ class GoogleSheetsService:
     async def get_contacts(self):
         """Get contacts from Google Sheets (Vārds, Telefona nr columns for Latvian sheets)"""
         try:
+            if not self.sheet_id:
+                logger.error("No sheet ID configured (GOOGLE_SHEETS_ID env var)")
+                return []
+
             credentials = await self.get_credentials()
             sheets = discovery.build("sheets", "v4", credentials=credentials)
 
-            # Get spreadsheet ID from Supabase metadata
-            metadata = supabase.table("oauth_credentials").select("metadata").eq(
-                "provider", "google_sheets"
-            ).execute()
-
-            if not metadata.data or not metadata.data[0].get("metadata"):
-                logger.error("No spreadsheet ID found")
-                return []
-
-            sheet_id = metadata.data[0]["metadata"].get("sheet_id")
-
             # Read all columns to find Name and Phone
             result = sheets.spreadsheets().values().get(
-                spreadsheetId=sheet_id,
+                spreadsheetId=self.sheet_id,
                 range="Sheet1!A:Z",
             ).execute()
 
             values = result.get("values", [])
-            if not values:
+            if not values or len(values) < 2:
+                logger.warning("No data found in sheet or sheet is empty")
                 return []
 
             # Find column indices for Name (Vārds) and Phone (Telefona nr)

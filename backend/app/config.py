@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+import json
 
 class Settings(BaseSettings):
     # Supabase
@@ -7,10 +8,14 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str
     SUPABASE_SERVICE_ROLE_KEY: str
 
-    # Google OAuth
-    GOOGLE_CLIENT_ID: str
-    GOOGLE_CLIENT_SECRET: str
-    GOOGLE_REDIRECT_URI: str
+    # Google Service Account (for direct Sheets access)
+    GOOGLE_SERVICE_ACCOUNT_JSON: Optional[str] = None
+    GOOGLE_SHEETS_ID: Optional[str] = None
+
+    # Google OAuth (legacy, can be removed)
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_REDIRECT_URI: Optional[str] = None
 
     # Meta WhatsApp
     META_BUSINESS_ACCOUNT_ID: Optional[str] = None
@@ -29,3 +34,13 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
 
 settings = Settings()
+
+# Parse service account JSON if provided
+def get_service_account_credentials():
+    """Parse service account JSON from environment"""
+    if not settings.GOOGLE_SERVICE_ACCOUNT_JSON:
+        return None
+    try:
+        return json.loads(settings.GOOGLE_SERVICE_ACCOUNT_JSON)
+    except json.JSONDecodeError:
+        return None
