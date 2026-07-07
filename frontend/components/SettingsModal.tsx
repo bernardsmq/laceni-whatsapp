@@ -104,13 +104,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             style={{
               width: '100%',
               padding: '10px 12px',
-              border: '1px solid var(--line)',
+              border: '1px solid #EAE3CF',
               borderRadius: '8px',
-              fontFamily: 'monospace',
               fontSize: '12px',
               minHeight: '100px',
               fontFamily: 'monospace',
-            }}
+            } as React.CSSProperties}
           />
           <p style={{ fontSize: '11px', color: '#8a8374', marginTop: '4px' }}>
             Get this from Meta Business Manager → Settings → Apps and websites
