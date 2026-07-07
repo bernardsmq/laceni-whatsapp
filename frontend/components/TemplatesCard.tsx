@@ -1,9 +1,8 @@
 interface TemplatesCardProps {
   connected: boolean
-  onConnect: () => void
 }
 
-export default function TemplatesCard({ connected, onConnect }: TemplatesCardProps) {
+export default function TemplatesCard({ connected }: TemplatesCardProps) {
   return (
     <div className="card">
       <div className="card-head">
