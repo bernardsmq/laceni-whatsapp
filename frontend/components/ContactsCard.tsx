@@ -16,6 +16,8 @@ interface ContactsCardProps {
 export default function ContactsCard({ connected }: ContactsCardProps) {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMessage, setSyncMessage] = useState('')
 
   useEffect(() => {
     fetchContacts()
@@ -35,6 +37,27 @@ export default function ContactsCard({ connected }: ContactsCardProps) {
     }
   }
 
+  const handleSync = async () => {
+    setSyncing(true)
+    setSyncMessage('')
+
+    try {
+      const response = await fetch('/api/sync-contacts', { method: 'POST' })
+      if (response.ok) {
+        const data = await response.json()
+        setSyncMessage(`✅ Synced ${data.synced} contacts from Google Sheet`)
+        await fetchContacts()
+      } else {
+        setSyncMessage('❌ Sync failed - check your credentials')
+      }
+    } catch (error) {
+      setSyncMessage('❌ Error syncing contacts')
+      console.error(error)
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   return (
     <div className="card">
       <div className="card-head">
@@ -43,6 +66,21 @@ export default function ContactsCard({ connected }: ContactsCardProps) {
           <h3 className="card-title">Contact list</h3>
         </div>
       </div>
+
+      {syncMessage && (
+        <div
+          style={{
+            padding: '12px',
+            marginBottom: '12px',
+            borderRadius: '8px',
+            backgroundColor: syncMessage.includes('✅') ? '#e8ffe8' : '#ffe8e8',
+            color: syncMessage.includes('✅') ? '#2e7d32' : '#c4482f',
+            fontSize: '13px',
+          }}
+        >
+          {syncMessage}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ padding: '16px', textAlign: 'center', color: '#8a8374' }}>
@@ -65,9 +103,16 @@ export default function ContactsCard({ connected }: ContactsCardProps) {
           </div>
           <p className="empty-title">No contacts yet</p>
           <p className="empty-copy">
-            Contacts from your Google Sheet will appear here. Make sure your
-            sheet has Name and Phone columns.
+            Click "Sync from Google Sheet" to import your contacts.
           </p>
+          <button
+            className="btn btn-primary"
+            onClick={handleSync}
+            disabled={syncing}
+            style={{ marginTop: '12px' }}
+          >
+            {syncing ? 'Syncing...' : '🔄 Sync from Google Sheet'}
+          </button>
         </div>
       ) : (
         <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
