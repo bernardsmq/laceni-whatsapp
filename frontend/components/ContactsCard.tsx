@@ -82,6 +82,37 @@ export default function ContactsCard({ connected }: ContactsCardProps) {
         </div>
       )}
 
+      <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <button
+          className="btn btn-primary"
+          onClick={handleSync}
+          disabled={syncing || loading}
+          style={{ padding: '8px 12px', fontSize: '12px' }}
+        >
+          {syncing ? '⏳ Syncing...' : '🔄 Refresh'}
+        </button>
+        {contacts.length > 0 && (
+          <span style={{ fontSize: '12px', color: '#8a8374' }}>
+            {contacts.length} contact{contacts.length !== 1 ? 's' : ''} synced
+          </span>
+        )}
+      </div>
+
+      {syncMessage && (
+        <div
+          style={{
+            padding: '12px',
+            marginBottom: '12px',
+            borderRadius: '8px',
+            backgroundColor: syncMessage.includes('✅') ? '#e8ffe8' : '#ffe8e8',
+            color: syncMessage.includes('✅') ? '#2e7d32' : '#c4482f',
+            fontSize: '13px',
+          }}
+        >
+          {syncMessage}
+        </div>
+      )}
+
       {loading ? (
         <div style={{ padding: '16px', textAlign: 'center', color: '#8a8374' }}>
           Loading contacts...
@@ -103,16 +134,8 @@ export default function ContactsCard({ connected }: ContactsCardProps) {
           </div>
           <p className="empty-title">No contacts yet</p>
           <p className="empty-copy">
-            Click "Sync from Google Sheet" to import your contacts.
+            Click "Refresh" above to sync from your Google Sheet.
           </p>
-          <button
-            className="btn btn-primary"
-            onClick={handleSync}
-            disabled={syncing}
-            style={{ marginTop: '12px' }}
-          >
-            {syncing ? 'Syncing...' : '🔄 Sync from Google Sheet'}
-          </button>
         </div>
       ) : (
         <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
