@@ -46,9 +46,12 @@ export default function CampaignCard({
   const fetchTemplates = async () => {
     try {
       const response = await fetch('/api/templates')
+      const data = await response.json()
+      console.log('Templates response:', data)
       if (response.ok) {
-        const data = await response.json()
         setTemplates(data.templates || [])
+      } else {
+        console.error('Template fetch error:', data)
       }
     } catch (error) {
       console.error('Failed to fetch templates:', error)
@@ -191,6 +194,68 @@ export default function CampaignCard({
         both selected — this prevents sending to an empty or stale list by
         accident.
       </p>
+
+      <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #EAE3CF' }} />
+
+      <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f9f5ed', borderRadius: '8px' }}>
+        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 'bold' }}>🧪 Test Send (Debug)</h4>
+        <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#8a8374' }}>
+          Manually test sending a message to a specific phone number
+        </p>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <input
+            type="text"
+            placeholder="Phone number (e.g. 37126713717)"
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              border: '1px solid #EAE3CF',
+              borderRadius: '6px',
+              fontSize: '12px',
+            }}
+            onChange={(e) => setNamePreview(e.target.value)}
+          />
+          <button
+            className="btn btn-primary"
+            style={{ fontSize: '12px', padding: '8px 16px' }}
+            onClick={async () => {
+              const phoneNum = namePreview
+              if (!phoneNum) {
+                setError('Please enter a phone number')
+                return
+              }
+              setSending(true)
+              try {
+                const response = await fetch('/api/campaigns/send-test', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    phone_number: phoneNum,
+                    message: 'Test message from Lāceni dashboard',
+                  }),
+                })
+                const result = await response.json()
+                if (response.ok) {
+                  setSuccess(`✅ Test message sent to ${phoneNum}`)
+                } else {
+                  setError(`❌ ${result.detail || 'Failed to send test message'}`)
+                }
+              } catch (err) {
+                setError('Error sending test message')
+              } finally {
+                setSending(false)
+              }
+            }}
+            disabled={sending || !namePreview}
+          >
+            {sending ? 'Sending...' : 'Send Test'}
+          </button>
+        </div>
+        <div style={{ fontSize: '11px', color: '#8a8374', marginTop: '8px' }}>
+          <p style={{ margin: '4px 0' }}>📝 Total templates loaded: <strong>{templates.length}</strong></p>
+          <p style={{ margin: '4px 0' }}>📞 Total contacts: <strong>{contacts.length}</strong></p>
+        </div>
+      </div>
     </div>
   )
 }

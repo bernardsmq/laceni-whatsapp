@@ -12,6 +12,34 @@ router = APIRouter()
 class SendCampaignRequest(BaseModel):
     template_id: str
 
+class SendTestRequest(BaseModel):
+    phone_number: str
+    message: str
+
+@router.post("/campaigns/send-test")
+async def send_test_message(request: SendTestRequest):
+    """Send a test message to a specific phone number"""
+    try:
+        meta_service = MetaService()
+
+        logger.info(f"Sending test message to {request.phone_number}")
+        result = await meta_service.send_message(
+            phone_number=request.phone_number,
+            template_id="test_message",
+            body=request.message,
+        )
+
+        logger.info(f"Test message sent: {result}")
+        return {
+            "success": True,
+            "message": f"Test message sent to {request.phone_number}",
+            "result": result,
+        }
+
+    except Exception as e:
+        logger.error(f"Error sending test message: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/campaigns/send")
 async def send_campaign(request: SendCampaignRequest):
     """Send a campaign to all contacts with personalized name"""
