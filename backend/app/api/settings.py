@@ -12,19 +12,35 @@ class SettingsUpdate(BaseModel):
     meta_access_token: str
 
 @router.post("/settings")
-async def save_settings(settings: SettingsUpdate):
+async def save_settings(settings_data: SettingsUpdate):
     """Save Meta WhatsApp settings"""
     try:
-        # Store in Supabase as metadata
-        supabase.table("oauth_credentials").upsert({
-            "provider": "meta_whatsapp",
-            "access_token": settings.meta_access_token,
-            "metadata": {
-                "phone_id": settings.meta_phone_id,
-            }
-        }).execute()
+        # Check if record exists
+        existing = supabase.table("oauth_credentials").select("id").eq(
+            "provider", "meta_whatsapp"
+        ).execute()
 
-        logger.info("Meta WhatsApp settings saved")
+        if existing.data:
+            # Update existing
+            supabase.table("oauth_credentials").update({
+                "access_token": settings_data.meta_access_token,
+                "metadata": {
+                    "phone_id": settings_data.meta_phone_id,
+                },
+                "updated_at": "now()"
+            }).eq("provider", "meta_whatsapp").execute()
+            logger.info("Meta WhatsApp settings updated")
+        else:
+            # Insert new
+            supabase.table("oauth_credentials").insert({
+                "provider": "meta_whatsapp",
+                "access_token": settings_data.meta_access_token,
+                "metadata": {
+                    "phone_id": settings_data.meta_phone_id,
+                }
+            }).execute()
+            logger.info("Meta WhatsApp settings created")
+
         return {"success": True, "message": "Settings saved"}
 
     except Exception as e:
