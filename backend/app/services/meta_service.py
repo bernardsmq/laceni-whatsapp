@@ -32,7 +32,19 @@ class MetaService:
     async def get_message_templates(self) -> List[Dict]:
         """Get message templates from Meta WhatsApp Business account"""
         try:
-            url = f"{self.BASE_URL}/{settings.META_WHATSAPP_BUSINESS_ACCOUNT_ID}/message_templates"
+            phone_number_id = settings.META_PHONE_NUMBER_ID
+            if not phone_number_id:
+                # Try to get from Supabase if not in env
+                cred_data = supabase.table("oauth_credentials").select("*").eq(
+                    "provider", "meta_whatsapp"
+                ).execute()
+                if cred_data.data:
+                    phone_number_id = cred_data.data[0].get("metadata", {}).get("phone_id")
+
+            if not phone_number_id:
+                raise Exception("Phone Number ID not found. Please configure Meta WhatsApp settings.")
+
+            url = f"{self.BASE_URL}/{phone_number_id}/message_templates"
             params = {"access_token": self.access_token}
 
             response = requests.get(url, params=params)
