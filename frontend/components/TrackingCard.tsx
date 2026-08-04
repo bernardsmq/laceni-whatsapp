@@ -33,9 +33,7 @@ export default function TrackingCard() {
 
   const fetchTrackingData = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/logs`
-      )
+      const response = await fetch('/api/logs')
       if (response.ok) {
         const data = await response.json()
         setStats(data.stats || { sent: 0, delivered: 0, read: 0 })
@@ -50,9 +48,7 @@ export default function TrackingCard() {
 
   const handleExportLog = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/logs/export`
-      )
+      const response = await fetch('/api/logs/export')
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)

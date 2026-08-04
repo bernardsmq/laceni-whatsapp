@@ -45,9 +45,7 @@ export default function CampaignCard({
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/templates`
-      )
+      const response = await fetch('/api/templates')
       if (response.ok) {
         const data = await response.json()
         setTemplates(data.templates || [])
@@ -59,9 +57,7 @@ export default function CampaignCard({
 
   const fetchContacts = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/contacts`
-      )
+      const response = await fetch('/api/contacts')
       if (response.ok) {
         const data = await response.json()
         setContacts(data.contacts || [])
@@ -82,16 +78,13 @@ export default function CampaignCard({
     setSuccess('')
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/send`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            template_id: selectedTemplate,
-          }),
-        }
-      )
+      const response = await fetch('/api/campaigns/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template_id: selectedTemplate,
+        }),
+      })
 
       if (response.ok) {
         setSuccess(`Campaign sent to ${contacts.length} recipients`)
