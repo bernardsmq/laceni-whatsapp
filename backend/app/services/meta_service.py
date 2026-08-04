@@ -14,8 +14,13 @@ class MetaService:
         self.access_token = self._get_access_token()
 
     def _get_access_token(self) -> str:
-        """Get Meta access token from Supabase"""
+        """Get Meta access token from env or Supabase"""
         try:
+            # Try environment variable first
+            if settings.META_WHATSAPP_ACCESS_TOKEN:
+                return settings.META_WHATSAPP_ACCESS_TOKEN
+
+            # Fall back to Supabase
             cred_data = supabase.table("oauth_credentials").select("*").eq(
                 "provider", "meta_whatsapp"
             ).execute()

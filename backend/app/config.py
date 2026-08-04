@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     META_BUSINESS_ACCOUNT_ID: Optional[str] = None
     META_WHATSAPP_BUSINESS_ACCOUNT_ID: Optional[str] = None
     META_PHONE_NUMBER_ID: Optional[str] = None
+    META_WHATSAPP_ACCESS_TOKEN: Optional[str] = None
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:3000"
