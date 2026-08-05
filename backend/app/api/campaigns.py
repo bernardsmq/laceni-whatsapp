@@ -83,7 +83,6 @@ async def send_campaign(request: SendCampaignRequest):
 
         # Log the campaign
         log_entry = {
-            "sent_at": datetime.utcnow().isoformat(),
             "template_id": request.template_id,
             "template_name": template_data["name"],
             "recipients_count": sent_count,

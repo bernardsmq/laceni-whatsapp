@@ -15,7 +15,7 @@ async def get_logs():
     """Get send logs and tracking stats"""
     try:
         logs = supabase.table("send_logs").select("*").order(
-            "sent_at", desc=True
+            "created_at", desc=True
         ).execute()
 
         log_data = logs.data or []
