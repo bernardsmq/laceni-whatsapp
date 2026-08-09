@@ -45,22 +45,12 @@ async def health_check():
 
 @app.get("/api/status")
 async def connection_status():
-    """Check connection status for Meta and Google Sheets"""
-    from app.services.supabase_client import supabase
-
+    """Check connection status for Twilio and Google Sheets"""
+    twilio_connected = bool(settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_WHATSAPP_PHONE_NUMBER)
     sheet_connected = bool(settings.GOOGLE_SHEETS_ID)
 
-    # Check if Meta is configured
-    try:
-        meta_creds = supabase.table("oauth_credentials").select("*").eq(
-            "provider", "meta_whatsapp"
-        ).execute()
-        meta_connected = bool(meta_creds.data and meta_creds.data[0].get("access_token"))
-    except:
-        meta_connected = False
-
     return {
-        "meta_connected": meta_connected,
+        "meta_connected": twilio_connected,  # Keep 'meta_connected' key for frontend compatibility
         "sheet_connected": sheet_connected,
     }
 

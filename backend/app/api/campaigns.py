@@ -23,7 +23,7 @@ async def send_test_message(request: SendTestRequest):
         twilio_service = TwilioService()
 
         logger.info(f"Sending test message to {request.phone_number}")
-        result = await meta_service.send_message(
+        result = await twilio_service.send_message(
             phone_number=request.phone_number,
             template_id="test_message",
             body=request.message,
