@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 
 from app.services.supabase_client import supabase
-from app.services.meta_service import MetaService
+from app.services.twilio_service import TwilioService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -20,7 +20,7 @@ class SendTestRequest(BaseModel):
 async def send_test_message(request: SendTestRequest):
     """Send a test message to a specific phone number"""
     try:
-        meta_service = MetaService()
+        twilio_service = TwilioService()
 
         logger.info(f"Sending test message to {request.phone_number}")
         result = await meta_service.send_message(
@@ -62,7 +62,7 @@ async def send_campaign(request: SendCampaignRequest):
             raise HTTPException(status_code=400, detail="No contacts to send to")
 
         # Send messages via Meta WhatsApp API
-        meta_service = MetaService()
+        twilio_service = TwilioService()
         sent_count = 0
         failed_count = 0
 
@@ -71,7 +71,7 @@ async def send_campaign(request: SendCampaignRequest):
                 # Personalize message with contact's name
                 message_body = template_data["body"].replace("{{name}}", contact["name"])
 
-                await meta_service.send_message(
+                await twilio_service.send_message(
                     phone_number=contact["phone"],
                     template_id=request.template_id,
                     body=message_body,

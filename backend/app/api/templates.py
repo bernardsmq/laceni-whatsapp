@@ -2,35 +2,17 @@ from fastapi import APIRouter, HTTPException
 import logging
 
 from app.services.supabase_client import supabase
-from app.services.meta_service import MetaService
+from app.services.twilio_service import TwilioService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get("/templates")
 async def list_templates():
-    """List available message templates from Meta WhatsApp"""
+    """List available message templates from database"""
     try:
-        # Get credentials from Supabase
-        credentials = supabase.table("oauth_credentials").select("*").eq(
-            "provider", "meta_whatsapp"
-        ).execute()
-
-        if not credentials.data:
-            return {"templates": []}
-
-        meta_service = MetaService()
-        templates = await meta_service.get_message_templates()
-
-        # Store templates in Supabase for quick access
-        for template in templates:
-            supabase.table("message_templates").upsert({
-                "template_id": template["id"],
-                "name": template["name"],
-                "body": template.get("body", ""),
-                "language": template.get("language", "en"),
-            }).execute()
-
+        twilio_service = TwilioService()
+        templates = await twilio_service.get_message_templates()
         return {"templates": templates}
 
     except Exception as e:

@@ -24,11 +24,16 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: Optional[str] = None
     GOOGLE_REDIRECT_URI: Optional[str] = None
 
-    # Meta WhatsApp
+    # Meta WhatsApp (Legacy)
     META_BUSINESS_ACCOUNT_ID: Optional[str] = None
     META_WHATSAPP_BUSINESS_ACCOUNT_ID: Optional[str] = None
     META_PHONE_NUMBER_ID: Optional[str] = None
     META_WHATSAPP_ACCESS_TOKEN: Optional[str] = None
+
+    # Twilio WhatsApp
+    TWILIO_ACCOUNT_SID: Optional[str] = None
+    TWILIO_AUTH_TOKEN: Optional[str] = None
+    TWILIO_WHATSAPP_PHONE_NUMBER: Optional[str] = None
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:3000"
