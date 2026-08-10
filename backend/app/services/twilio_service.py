@@ -59,11 +59,14 @@ class TwilioService:
 
             # Check if template has a Twilio SID
             if template_sid:
-                # Send using Twilio template
+                # Send using Twilio template with content variables
+                import json
+                content_variables = json.dumps([body]) if body else json.dumps([])
                 message = self.client.messages.create(
                     from_=f"whatsapp:{self.from_phone}",
                     to=f"whatsapp:{phone_number}",
                     content_sid=template_sid,
+                    content_variables=content_variables,
                 )
                 logger.info(f"Message sent to {phone_number} using template {template_sid}: {message.sid}")
             else:
