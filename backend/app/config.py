@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: Optional[str] = None
     TWILIO_AUTH_TOKEN: Optional[str] = None
     TWILIO_WHATSAPP_PHONE_NUMBER: Optional[str] = None
+    TWILIO_TEMPLATE_SID: Optional[str] = None
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:3000"

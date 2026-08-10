@@ -12,6 +12,7 @@ class TwilioService:
         self.account_sid = settings.TWILIO_ACCOUNT_SID
         self.auth_token = settings.TWILIO_AUTH_TOKEN
         self.from_phone = settings.TWILIO_WHATSAPP_PHONE_NUMBER
+        self.default_template_sid = settings.TWILIO_TEMPLATE_SID
 
         if not all([self.account_sid, self.auth_token, self.from_phone]):
             raise Exception("Twilio credentials not configured")
@@ -53,15 +54,18 @@ class TwilioService:
             if not phone_number.startswith('+'):
                 phone_number = '+' + phone_number
 
+            # Use provided SID or fall back to default
+            template_sid = twilio_template_sid or self.default_template_sid
+
             # Check if template has a Twilio SID
-            if twilio_template_sid:
+            if template_sid:
                 # Send using Twilio template
                 message = self.client.messages.create(
                     from_=f"whatsapp:{self.from_phone}",
                     to=f"whatsapp:{phone_number}",
-                    content_sid=twilio_template_sid,
+                    content_sid=template_sid,
                 )
-                logger.info(f"Message sent to {phone_number} using template {twilio_template_sid}: {message.sid}")
+                logger.info(f"Message sent to {phone_number} using template {template_sid}: {message.sid}")
             else:
                 # Send as free-form message
                 message = self.client.messages.create(
