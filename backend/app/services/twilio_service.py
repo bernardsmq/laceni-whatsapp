@@ -45,6 +45,7 @@ class TwilioService:
         phone_number: str,
         template_id: str,
         body: str,
+        twilio_template_sid: str = None,
     ) -> Dict:
         """Send a WhatsApp message via Twilio"""
         try:
@@ -52,14 +53,23 @@ class TwilioService:
             if not phone_number.startswith('+'):
                 phone_number = '+' + phone_number
 
-            # Send message via Twilio WhatsApp
-            message = self.client.messages.create(
-                from_=f"whatsapp:{self.from_phone}",
-                to=f"whatsapp:{phone_number}",
-                body=body,
-            )
-
-            logger.info(f"Message sent to {phone_number}: {message.sid}")
+            # Check if template has a Twilio SID
+            if twilio_template_sid:
+                # Send using Twilio template
+                message = self.client.messages.create(
+                    from_=f"whatsapp:{self.from_phone}",
+                    to=f"whatsapp:{phone_number}",
+                    content_sid=twilio_template_sid,
+                )
+                logger.info(f"Message sent to {phone_number} using template {twilio_template_sid}: {message.sid}")
+            else:
+                # Send as free-form message
+                message = self.client.messages.create(
+                    from_=f"whatsapp:{self.from_phone}",
+                    to=f"whatsapp:{phone_number}",
+                    body=body,
+                )
+                logger.info(f"Message sent to {phone_number}: {message.sid}")
 
             return {
                 "success": True,
