@@ -27,6 +27,7 @@ export default function CampaignCard({
   const [contacts, setContacts] = useState<Contact[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [namePreview, setNamePreview] = useState('')
+  const [testPhoneNumber, setTestPhoneNumber] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -213,13 +214,14 @@ export default function CampaignCard({
               borderRadius: '6px',
               fontSize: '12px',
             }}
-            onChange={(e) => setNamePreview(e.target.value)}
+            value={testPhoneNumber}
+            onChange={(e) => setTestPhoneNumber(e.target.value)}
           />
           <button
             className="btn btn-primary"
             style={{ fontSize: '12px', padding: '8px 16px' }}
             onClick={async () => {
-              const phoneNum = namePreview
+              const phoneNum = testPhoneNumber
               if (!phoneNum) {
                 setError('Please enter a phone number')
                 return
@@ -246,7 +248,7 @@ export default function CampaignCard({
                 setSending(false)
               }
             }}
-            disabled={sending || !namePreview}
+            disabled={sending || !testPhoneNumber}
           >
             {sending ? 'Sending...' : 'Send Test'}
           </button>
