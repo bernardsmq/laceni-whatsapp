@@ -61,47 +61,24 @@ class TwilioService:
             # Use provided SID or fall back to default
             template_sid = twilio_template_sid or self.default_template_sid
 
-            # Check if template has a Twilio SID
-            if template_sid:
-                # Extract name from body
-                name_only = body.split()[0] if body else "Friend"
+            # Body is already personalized ({{1}} replaced with name), so send as free-form message
+            # Don't try to re-use Twilio template substitution
+            data = {
+                "From": f"whatsapp:{self.from_phone}",
+                "To": f"whatsapp:{phone_number}",
+                "Body": body,
+            }
 
-                # Send using Twilio REST API with template variables
-                data = {
-                    "From": f"whatsapp:{self.from_phone}",
-                    "To": f"whatsapp:{phone_number}",
-                    "ContentSid": template_sid,
-                    "ContentVariables": json.dumps({"1": name_only}),
-                }
+            response = requests.post(
+                f"{self.base_url}/Messages.json",
+                data=data,
+                auth=self.auth,
+            )
+            response.raise_for_status()
+            result = response.json()
+            message_sid = result.get("sid", "")
 
-                response = requests.post(
-                    f"{self.base_url}/Messages.json",
-                    data=data,
-                    auth=self.auth,
-                )
-                response.raise_for_status()
-                result = response.json()
-                message_sid = result.get("sid", "")
-
-                logger.info(f"Message sent to {phone_number} using template {template_sid} with name {name_only}: {message_sid}")
-            else:
-                # Send as free-form message
-                data = {
-                    "From": f"whatsapp:{self.from_phone}",
-                    "To": f"whatsapp:{phone_number}",
-                    "Body": body,
-                }
-
-                response = requests.post(
-                    f"{self.base_url}/Messages.json",
-                    data=data,
-                    auth=self.auth,
-                )
-                response.raise_for_status()
-                result = response.json()
-                message_sid = result.get("sid", "")
-
-                logger.info(f"Message sent to {phone_number}: {message_sid}")
+            logger.info(f"Message sent to {phone_number}: {message_sid}")
 
             return {
                 "success": True,
