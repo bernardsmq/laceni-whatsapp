@@ -1,6 +1,8 @@
 import logging
+import requests
+import json
+import re
 from typing import List, Dict
-from twilio.rest import Client
 
 from app.config import settings
 from app.services.supabase_client import supabase
@@ -17,7 +19,8 @@ class TwilioService:
         if not all([self.account_sid, self.auth_token, self.from_phone]):
             raise Exception("Twilio credentials not configured")
 
-        self.client = Client(self.account_sid, self.auth_token)
+        self.base_url = f"https://api.twilio.com/2010-04-01/Accounts/{self.account_sid}"
+        self.auth = (self.account_sid, self.auth_token)
 
     async def get_message_templates(self) -> List[Dict]:
         """Get message templates from Supabase (user-managed)"""
@@ -50,40 +53,60 @@ class TwilioService:
     ) -> Dict:
         """Send a WhatsApp message via Twilio"""
         try:
-            # Format phone number (ensure it starts with +)
-            if not phone_number.startswith('+'):
-                phone_number = '+' + phone_number
+            # Format phone number - clean and add + prefix
+            phone_number = str(phone_number).strip()
+            digits_only = re.sub(r'\D', '', phone_number)
+            phone_number = '+' + digits_only
 
             # Use provided SID or fall back to default
             template_sid = twilio_template_sid or self.default_template_sid
 
             # Check if template has a Twilio SID
             if template_sid:
-                # Send using Twilio template with variables
-                import json
                 # Extract name from body
                 name_only = body.split()[0] if body else "Friend"
-                # Try passing variables parameter (not content_variables)
-                message = self.client.messages.create(
-                    from_=f"whatsapp:{self.from_phone}",
-                    to=f"whatsapp:{phone_number}",
-                    content_sid=template_sid,
-                    variables=json.dumps([name_only]),
+
+                # Send using Twilio REST API with template variables
+                data = {
+                    "From": f"whatsapp:{self.from_phone}",
+                    "To": f"whatsapp:{phone_number}",
+                    "ContentSid": template_sid,
+                    "ContentVariables": json.dumps({"1": name_only}),
+                }
+
+                response = requests.post(
+                    f"{self.base_url}/Messages.json",
+                    data=data,
+                    auth=self.auth,
                 )
-                logger.info(f"Message sent to {phone_number} using template {template_sid} with name {name_only}: {message.sid}")
+                response.raise_for_status()
+                result = response.json()
+                message_sid = result.get("sid", "")
+
+                logger.info(f"Message sent to {phone_number} using template {template_sid} with name {name_only}: {message_sid}")
             else:
                 # Send as free-form message
-                message = self.client.messages.create(
-                    from_=f"whatsapp:{self.from_phone}",
-                    to=f"whatsapp:{phone_number}",
-                    body=body,
+                data = {
+                    "From": f"whatsapp:{self.from_phone}",
+                    "To": f"whatsapp:{phone_number}",
+                    "Body": body,
+                }
+
+                response = requests.post(
+                    f"{self.base_url}/Messages.json",
+                    data=data,
+                    auth=self.auth,
                 )
-                logger.info(f"Message sent to {phone_number}: {message.sid}")
+                response.raise_for_status()
+                result = response.json()
+                message_sid = result.get("sid", "")
+
+                logger.info(f"Message sent to {phone_number}: {message_sid}")
 
             return {
                 "success": True,
-                "message_sid": message.sid,
-                "status": message.status,
+                "message_sid": message_sid,
+                "status": result.get("status", "queued"),
             }
 
         except Exception as e:
