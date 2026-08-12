@@ -111,8 +111,8 @@ export default function CampaignCard({
   }
 
   const previewMessage = getSelectedTemplateBody().replace(
-    '{{name}}',
-    namePreview ? `<span class="ph">${namePreview}</span>` : '<span class="ph">{{name}}</span>'
+    '{{1}}',
+    namePreview ? `<span class="ph">${namePreview}</span>` : '<span class="ph">{{1}}</span>'
   )
 
   return (
