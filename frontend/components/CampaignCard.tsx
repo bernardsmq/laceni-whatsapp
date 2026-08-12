@@ -236,7 +236,7 @@ export default function CampaignCard({
                 })
                 const result = await response.json()
                 if (response.ok) {
-                  setSuccess(`✅ Test message sent to ${phoneNum}`)
+                  setSuccess(`✅ Test message sent to +${phoneNum}`)
                 } else {
                   setError(`❌ ${result.detail || 'Failed to send test message'}`)
                 }
