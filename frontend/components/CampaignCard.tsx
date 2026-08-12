@@ -110,10 +110,16 @@ export default function CampaignCard({
     return template?.body || 'Select a template to see preview'
   }
 
-  const previewMessage = getSelectedTemplateBody().replace(
-    '{{1}}',
-    namePreview ? `<span class="ph">${namePreview}</span>` : '<span class="ph">{{1}}</span>'
-  )
+  const templateBody = getSelectedTemplateBody()
+  const previewMessage = (() => {
+    console.log('Template body:', templateBody)
+    console.log('Looking for: {{1}}')
+    console.log('namePreview:', namePreview)
+    const replacement = namePreview ? `<span class="ph">${namePreview}</span>` : '<span class="ph">{{1}}</span>'
+    const result = templateBody.replace('{{1}}', replacement)
+    console.log('Preview result:', result)
+    return result
+  })()
 
   return (
     <div className="card">
