@@ -228,12 +228,17 @@ export default function CampaignCard({
               }
               setSending(true)
               try {
+                // Personalize message with name from preview field
+                const personalizedMessage = getSelectedTemplateBody().replace(
+                  '{{name}}',
+                  namePreview || 'Friend'
+                )
                 const response = await fetch('/api/campaigns/send-test', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     phone_number: phoneNum,
-                    message: 'Test message from Lāceni dashboard',
+                    message: personalizedMessage,
                   }),
                 })
                 const result = await response.json()
