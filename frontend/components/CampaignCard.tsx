@@ -230,7 +230,7 @@ export default function CampaignCard({
               try {
                 // Personalize message with name from preview field
                 const personalizedMessage = getSelectedTemplateBody().replace(
-                  '{{name}}',
+                  '{{1}}',
                   namePreview || 'Friend'
                 )
                 const response = await fetch('/api/campaigns/send-test', {
