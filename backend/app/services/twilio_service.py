@@ -59,13 +59,18 @@ class TwilioService:
 
             # Check if template has a Twilio SID
             if template_sid:
-                # Send using Twilio template (no content variables)
+                # Send using Twilio template with content variables ({{1}} placeholder)
+                import json
+                # Extract name from body parameter (it contains the personalized name)
+                # The body is passed as the personalization, use it as the first variable
+                content_variables = json.dumps([body])
                 message = self.client.messages.create(
                     from_=f"whatsapp:{self.from_phone}",
                     to=f"whatsapp:{phone_number}",
                     content_sid=template_sid,
+                    content_variables=content_variables,
                 )
-                logger.info(f"Message sent to {phone_number} using template {template_sid}: {message.sid}")
+                logger.info(f"Message sent to {phone_number} using template {template_sid} with variable [{body}]: {message.sid}")
             else:
                 # Send as free-form message
                 message = self.client.messages.create(
