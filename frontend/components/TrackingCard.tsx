@@ -11,6 +11,7 @@ interface SendLog {
 }
 
 interface TrackingStats {
+  total: number
   sent: number
   delivered: number
   read: number
@@ -18,6 +19,7 @@ interface TrackingStats {
 
 export default function TrackingCard() {
   const [stats, setStats] = useState<TrackingStats>({
+    total: 0,
     sent: 0,
     delivered: 0,
     read: 0,
@@ -38,6 +40,7 @@ export default function TrackingCard() {
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
         setStats({
+          total: statsData.stats.total,
           sent: statsData.stats.sent,
           delivered: statsData.stats.delivered,
           read: statsData.stats.read,
@@ -96,7 +99,7 @@ export default function TrackingCard() {
 
         <div className="stat-grid">
           <div className="stat-tile accent">
-            <div className="stat-num">{stats.sent}</div>
+            <div className="stat-num">{stats.total}</div>
             <div className="stat-label">Messages sent</div>
           </div>
           <div className="stat-tile">
