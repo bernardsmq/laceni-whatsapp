@@ -68,14 +68,12 @@ async def send_campaign(request: SendCampaignRequest):
 
         for contact in contact_list:
             try:
-                # Personalize message with contact's name (replace {{1}} with actual name)
-                message_body = template_data["body"].replace("{{1}}", contact["name"])
                 twilio_sid = template_data.get("twilio_template_sid")
 
                 await twilio_service.send_message(
                     phone_number=contact["phone"],
                     template_id=request.template_id,
-                    body=message_body,
+                    contact_name=contact["name"],
                     twilio_template_sid=twilio_sid,
                 )
                 sent_count += 1

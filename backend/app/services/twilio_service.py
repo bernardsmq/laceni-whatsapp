@@ -48,26 +48,36 @@ class TwilioService:
         self,
         phone_number: str,
         template_id: str,
-        body: str,
+        contact_name: str = None,
         twilio_template_sid: str = None,
+        body: str = None,
     ) -> Dict:
-        """Send a WhatsApp message via Twilio"""
+        """Send a WhatsApp message via Twilio (template-based or free-form for testing)"""
         try:
             # Format phone number - clean and add + prefix
             phone_number = str(phone_number).strip()
             digits_only = re.sub(r'\D', '', phone_number)
             phone_number = '+' + digits_only
 
-            # Use provided SID or fall back to default
-            template_sid = twilio_template_sid or self.default_template_sid
+            # For free-form test messages
+            if body:
+                data = {
+                    "From": f"whatsapp:{self.from_phone}",
+                    "To": f"whatsapp:{phone_number}",
+                    "Body": body,
+                }
+            else:
+                # Use provided SID or fall back to default
+                template_sid = twilio_template_sid or self.default_template_sid
 
-            # Body is already personalized ({{1}} replaced with name), so send as free-form message
-            # Don't try to re-use Twilio template substitution
-            data = {
-                "From": f"whatsapp:{self.from_phone}",
-                "To": f"whatsapp:{phone_number}",
-                "Body": body,
-            }
+                # Send using Twilio template with variable substitution
+                # This allows sending outside the 24-hour messaging window
+                data = {
+                    "From": f"whatsapp:{self.from_phone}",
+                    "To": f"whatsapp:{phone_number}",
+                    "ContentSid": template_sid,
+                    "ContentVariables": json.dumps({"1": contact_name}),
+                }
 
             response = requests.post(
                 f"{self.base_url}/Messages.json",
