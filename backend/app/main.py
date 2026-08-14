@@ -38,8 +38,8 @@ app.include_router(contacts.router, prefix="/api", tags=["contacts"])
 app.include_router(campaigns.router, prefix="/api", tags=["campaigns"])
 app.include_router(logs.router, prefix="/api", tags=["logs"])
 app.include_router(settings_api.router, prefix="/api", tags=["settings"])
-app.include_router(webhooks.router, tags=["webhooks"])
-app.include_router(analytics.router, tags=["analytics"])
+app.include_router(webhooks.router, prefix="/api", tags=["webhooks"])
+app.include_router(analytics.router, prefix="/api", tags=["analytics"])
 
 @app.get("/health")
 async def health_check():
