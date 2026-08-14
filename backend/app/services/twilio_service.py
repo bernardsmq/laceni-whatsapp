@@ -90,6 +90,9 @@ class TwilioService:
 
             logger.info(f"Message sent to {phone_number}: {message_sid}")
 
+            # Track message in database for delivery/read status monitoring
+            await self._track_message(message_sid, phone_number, template_id, "queued")
+
             return {
                 "success": True,
                 "message_sid": message_sid,
@@ -99,3 +102,31 @@ class TwilioService:
         except Exception as e:
             logger.error(f"Error sending message to {phone_number}: {str(e)}")
             raise
+
+    async def _track_message(self, message_sid: str, phone_number: str, template_id: str, status: str):
+        """Store message in database for tracking delivery/read status"""
+        try:
+            tracking_data = {
+                "message_sid": message_sid,
+                "phone_number": phone_number,
+                "template_id": template_id,
+                "status": status,
+            }
+            supabase.table("message_status").insert(tracking_data).execute()
+            logger.info(f"Tracking message {message_sid}: {status}")
+        except Exception as e:
+            logger.error(f"Failed to track message {message_sid}: {str(e)}")
+
+    async def update_message_status(self, message_sid: str, status: str, error_code: str = None):
+        """Update message status when webhook is received"""
+        try:
+            update_data = {"status": status}
+            if error_code:
+                update_data["error_code"] = error_code
+
+            supabase.table("message_status").update(update_data).eq(
+                "message_sid", message_sid
+            ).execute()
+            logger.info(f"Updated {message_sid} status to {status}")
+        except Exception as e:
+            logger.error(f"Failed to update message status: {str(e)}")
