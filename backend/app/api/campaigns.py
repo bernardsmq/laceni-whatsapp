@@ -102,5 +102,5 @@ async def send_campaign(request: SendCampaignRequest):
         }
 
     except Exception as e:
-        logger.error(f"Error sending campaign: {str(e)}")
+        logger.error(f"Error sending campaign: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
