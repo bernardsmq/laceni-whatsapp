@@ -33,11 +33,30 @@ export default function TrackingCard() {
 
   const fetchTrackingData = async () => {
     try {
-      const response = await fetch('/api/logs')
-      if (response.ok) {
-        const data = await response.json()
-        setStats(data.stats || { sent: 0, delivered: 0, read: 0 })
-        setLogs(data.logs || [])
+      // Fetch analytics stats (sent/delivered/read counts from message_status)
+      const statsResponse = await fetch('/api/analytics/campaign-stats')
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        setStats({
+          sent: statsData.stats.sent,
+          delivered: statsData.stats.delivered,
+          read: statsData.stats.read,
+        })
+      }
+
+      // Fetch message list
+      const logsResponse = await fetch('/api/analytics/all-messages')
+      if (logsResponse.ok) {
+        const logsData = await logsResponse.json()
+        // Map message_status format to SendLog format for display
+        const formattedLogs = logsData.messages.map((msg: any) => ({
+          id: msg.id,
+          sent_at: msg.created_at,
+          template_name: msg.template_id,
+          recipients_count: 1,
+          status: msg.status,
+        }))
+        setLogs(formattedLogs)
       }
     } catch (error) {
       console.error('Failed to fetch tracking data:', error)
