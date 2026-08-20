@@ -26,6 +26,7 @@ export default function TrackingCard() {
   })
   const [logs, setLogs] = useState<SendLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   useEffect(() => {
     fetchTrackingData()
@@ -87,6 +88,19 @@ export default function TrackingCard() {
     }
   }
 
+  const handleSortByDate = () => {
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+  }
+
+  const getSortedLogs = () => {
+    const sorted = [...logs].sort((a, b) => {
+      const dateA = new Date(a.sent_at).getTime()
+      const dateB = new Date(b.sent_at).getTime()
+      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
+    })
+    return sorted
+  }
+
   return (
     <div className="track-frame">
       <div className="track-inner">
@@ -115,7 +129,13 @@ export default function TrackingCard() {
         <table>
           <thead>
             <tr>
-              <th>Sent at</th>
+              <th
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+                onClick={handleSortByDate}
+                title="Click to sort"
+              >
+                Sent at {sortOrder === 'asc' ? '↑' : '↓'}
+              </th>
               <th>Template</th>
               <th>Recipients</th>
               <th>Status</th>
@@ -130,7 +150,7 @@ export default function TrackingCard() {
                 </td>
               </tr>
             ) : (
-              logs.map((log) => (
+              getSortedLogs().map((log) => (
                 <tr key={log.id}>
                   <td>{new Date(log.sent_at).toLocaleString()}</td>
                   <td>{log.template_name}</td>
