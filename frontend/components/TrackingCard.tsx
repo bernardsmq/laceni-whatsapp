@@ -17,6 +17,11 @@ interface TrackingStats {
   read: number
 }
 
+interface DateRange {
+  from: string
+  to: string
+}
+
 export default function TrackingCard() {
   const [stats, setStats] = useState<TrackingStats>({
     total: 0,
@@ -27,17 +32,24 @@ export default function TrackingCard() {
   const [logs, setLogs] = useState<SendLog[]>([])
   const [loading, setLoading] = useState(true)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [dateRange, setDateRange] = useState<DateRange | null>(null)
 
   useEffect(() => {
     fetchTrackingData()
     const interval = setInterval(fetchTrackingData, 10000) // Refresh every 10 seconds
     return () => clearInterval(interval)
-  }, [])
+  }, [dateRange])
 
   const fetchTrackingData = async () => {
     try {
+      const params = new URLSearchParams()
+      if (dateRange) {
+        params.append('date_from', dateRange.from)
+        params.append('date_to', dateRange.to)
+      }
+
       // Fetch analytics stats (sent/delivered/read counts from message_status)
-      const statsResponse = await fetch('/api/analytics/campaign-stats')
+      const statsResponse = await fetch(`/api/analytics/campaign-stats?${params}`)
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
         setStats({
@@ -49,7 +61,7 @@ export default function TrackingCard() {
       }
 
       // Fetch message list
-      const logsResponse = await fetch('/api/analytics/all-messages')
+      const logsResponse = await fetch(`/api/analytics/all-messages?${params}`)
       if (logsResponse.ok) {
         const logsData = await logsResponse.json()
         // Map message_status format to SendLog format for display
@@ -101,6 +113,49 @@ export default function TrackingCard() {
     return sorted
   }
 
+  const getToday = () => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return {
+      from: today.toISOString(),
+      to: tomorrow.toISOString(),
+    }
+  }
+
+  const getYesterday = () => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setHours(0, 0, 0, 0)
+    const today = new Date(yesterday)
+    today.setDate(today.getDate() + 1)
+    return {
+      from: yesterday.toISOString(),
+      to: today.toISOString(),
+    }
+  }
+
+  const getPast7Days = () => {
+    const to = new Date()
+    to.setHours(23, 59, 59, 999)
+    const from = new Date(to)
+    from.setDate(from.getDate() - 6)
+    from.setHours(0, 0, 0, 0)
+    return {
+      from: from.toISOString(),
+      to: to.toISOString(),
+    }
+  }
+
+  const handleDateFilter = (range: DateRange) => {
+    setDateRange(range)
+  }
+
+  const handleClearFilter = () => {
+    setDateRange(null)
+  }
+
   return (
     <div className="track-frame">
       <div className="track-inner">
@@ -108,6 +163,33 @@ export default function TrackingCard() {
           <h3 className="card-title">Tracking</h3>
           <button className="btn btn-ghost" onClick={handleExportLog}>
             Export log
+          </button>
+        </div>
+
+        <div className="date-filter-container">
+          <button
+            className={`date-filter-btn ${dateRange === null ? 'active' : ''}`}
+            onClick={handleClearFilter}
+          >
+            All time
+          </button>
+          <button
+            className={`date-filter-btn ${dateRange && dateRange.from === getPast7Days().from ? 'active' : ''}`}
+            onClick={() => handleDateFilter(getPast7Days())}
+          >
+            Past 7 days
+          </button>
+          <button
+            className={`date-filter-btn ${dateRange && dateRange.from === getToday().from ? 'active' : ''}`}
+            onClick={() => handleDateFilter(getToday())}
+          >
+            Today
+          </button>
+          <button
+            className={`date-filter-btn ${dateRange && dateRange.from === getYesterday().from ? 'active' : ''}`}
+            onClick={() => handleDateFilter(getYesterday())}
+          >
+            Yesterday
           </button>
         </div>
 
